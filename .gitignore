@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+
+# Logs
+*.log
+
+# pybaseball disk cache (local only — do not commit)
+# Located at ~/.pybaseball/cache/ — not in this repo
+
+# Generated outputs
+regression_cache.csv
+
+# Secrets / local config
+.env
