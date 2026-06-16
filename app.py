@@ -159,6 +159,7 @@ def _render_group(group_dict, container):
 
 
 # ── Sidebar ──────────────────────────────────────────────────────────────
+_CACHE_PATH = os.path.join(os.path.dirname(__file__), "data", "player_attrs.json")
 venues = list(cfg.PARK_FACTORS.keys())
 
 with st.sidebar:
@@ -246,8 +247,6 @@ def _fetch_player(mlb_id: int):
 @st.cache_data(ttl=3600, show_spinner=False)
 def _cached_load_attrs(players_cfg, start, end):
     return load_player_attributes(list(players_cfg), start, end)
-
-_CACHE_PATH = os.path.join(os.path.dirname(__file__), "data", "player_attrs.json")
 
 # ── Player Field ──────────────────────────────────────────────────────────
 st.subheader("Player Field")
