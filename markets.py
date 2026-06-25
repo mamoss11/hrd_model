@@ -327,9 +327,12 @@ def _to_american(prob: float) -> str:
         return f"+{int(odds)}"
 
 
+_LINE_MIN_PROB = 0.02   # suppress lines where either side has < 2% probability
+
 def _over_under_lines(vals: list) -> dict:
     """
     Generate Over/Under lines at the median and at ±5/±10 increments.
+    Lines where either side has < 2% implied probability are suppressed.
     Returns dict of { 'Over X.5': {prob, american}, 'Under X.5': {...} }
     """
     arr    = np.array(vals)
@@ -339,10 +342,10 @@ def _over_under_lines(vals: list) -> dict:
     for line in lines:
         over_prob  = float((arr > line).mean())
         under_prob = 1 - over_prob
-        label_over  = f"Over {line}"
-        label_under = f"Under {line}"
-        result[label_over]  = _fmt(over_prob)
-        result[label_under] = _fmt(under_prob)
+        if over_prob < _LINE_MIN_PROB or under_prob < _LINE_MIN_PROB:
+            continue
+        result[f"Over {line}"]  = _fmt(over_prob)
+        result[f"Under {line}"] = _fmt(under_prob)
     return result
 
 
