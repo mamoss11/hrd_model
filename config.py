@@ -5,24 +5,22 @@
 # ── Simulation ──────────────────────────────────────────────
 N_SIMULATIONS = 100_000
 
-# ── Derby Format (2024+ rules) ───────────────────────────────
+# ── Derby Format (2026 rules) ────────────────────────────────
+# Swing-based format: fixed swings per round, no timer, no bonus time.
+# Hot hand rule: if a player homers on their last swing, they keep
+# swinging until they do not hit a homer.
+# Tiebreakers: R1 = longest HR distance; R2/Finals = 3-swing swing-offs.
 DERBY_FORMAT = {
     "round_1": {
-        "base_swings_mean": 40,     # Poisson mean for 3-min round
-        "bonus_threshold": 20,       # HRs needed to earn bonus time
-        "bonus_swings_mean": 7,      # Poisson mean for 30-sec bonus
+        "swings": 20,
         "players_advancing": 4,
     },
     "semifinals": {
-        "base_swings_mean": 27,     # Poisson mean for 2-min round
-        "bonus_threshold": 20,
-        "bonus_swings_mean": 5,
+        "swings": 15,
         "players_advancing": 2,
     },
     "finals": {
-        "base_swings_mean": 27,
-        "bonus_threshold": None,     # No bonus in finals
-        "bonus_swings_mean": 0,
+        "swings": 15,
         "players_advancing": 1,
     },
 }
@@ -158,4 +156,4 @@ PLAYERS = [
 
 # ── Statcast Season Window ───────────────────────────────────
 SEASON_START = "2025-03-27"
-SEASON_END   = "2025-10-01"
+SEASON_END   = "2026-06-25"

@@ -221,8 +221,8 @@ with st.sidebar:
     )
     data_mode = st.radio("Player data", _data_opts)
     if data_mode == "Fetch Statcast":
-        season_start = st.text_input("Season start", cfg.SEASON_START)
-        season_end   = st.text_input("Season end",   cfg.SEASON_END)
+        season_start = st.text_input("Season start", "2025-03-27", key="season_start_v3")
+        season_end   = st.text_input("Season end",   "2026-06-25", key="season_end_v3")
     else:
         season_start = season_end = None
     if data_mode == "Load from cache":

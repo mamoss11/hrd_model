@@ -39,9 +39,10 @@ def _simulate_derby(players: list, rng: np.random.Generator) -> dict:
     r1_hrs    = {n: r1[n]["hrs"]     for n in names}
     r1_ranked = sorted(names, key=lambda n: r1_hrs[n], reverse=True)
 
-    # Resolve ties at the 4th/5th boundary
+    # Resolve ties at the 4th/5th boundary — R1 uses longest HR distance
     swing_offs = 0
-    r1_ranked, so = _resolve_cutline(r1_ranked, r1_hrs, cut=4, rng=rng)
+    r1_longest = {n: r1[n]["max_dist"] for n in names}
+    r1_ranked, so = _resolve_cutline(r1_ranked, r1_hrs, cut=4, rng=rng, distances=r1_longest)
     swing_offs += so
 
     semis_names   = r1_ranked[:4]
@@ -119,8 +120,7 @@ def _simulate_derby(players: list, rng: np.random.Generator) -> dict:
         if rd["max_ev"] > max_ev_by_player[nm]:
             max_ev_by_player[nm] = rd["max_ev"]
 
-    # Longest HR per player in round 1 only
-    r1_longest = {nm: r1[nm]["max_dist"] for nm in names}
+    # r1_longest already computed above for distance tiebreaker
 
     # Global stats
     derby_longest_dist   = max(max_dist_by_player.values())
@@ -192,16 +192,18 @@ def _simulate_round(player: dict, round_key: str, rng: np.random.Generator) -> d
 
     hr_prob = float(np.clip(player["hr_prob"] * pitcher_factor * park_factor, 0.05, 0.95))
 
-    swings  = int(rng.poisson(fmt["base_swings_mean"]))
-    hits    = rng.random(swings) < hr_prob
-    hrs     = int(hits.sum())
+    # Fixed swing allotment
+    swings = fmt["swings"]
+    hits   = rng.random(swings) < hr_prob
+    hrs    = int(hits.sum())
 
-    # Bonus time
-    if fmt["bonus_threshold"] is not None and hrs >= fmt["bonus_threshold"]:
-        bonus_swings = int(rng.poisson(fmt["bonus_swings_mean"]))
-        bonus_hits   = rng.random(bonus_swings) < hr_prob
-        hrs         += int(bonus_hits.sum())
-        swings      += bonus_swings
+    # Hot hand: if last swing was a HR, keep swinging until non-HR
+    if hits[-1]:
+        while True:
+            if rng.random() < hr_prob:
+                hrs += 1
+            else:
+                break
 
     # Max distance and EV for this round (only max is needed downstream)
     if hrs > 0:
@@ -238,16 +240,19 @@ def _swing_off(name_a: str, name_b: str, p_a: dict, p_b: dict,
 
 
 def _resolve_cutline(ranked: list, hrs: dict, cut: int,
-                     rng: np.random.Generator) -> tuple:
+                     rng: np.random.Generator,
+                     distances: dict = None) -> tuple:
     """
     Ensure no tie straddles the cut position.
+    If distances provided, uses longest HR distance as tiebreaker (2026 R1 rule).
+    Otherwise falls back to 3-swing swing-off (semis/finals).
     Returns (updated_ranking, n_swingoffs).
     """
     if len(ranked) <= cut:
         return ranked, 0
 
-    cutline_score  = hrs[ranked[cut - 1]]    # score of last qualifier
-    next_score     = hrs[ranked[cut]]        # score of first non-qualifier
+    cutline_score = hrs[ranked[cut - 1]]    # score of last qualifier
+    next_score    = hrs[ranked[cut]]        # score of first non-qualifier
     if cutline_score != next_score:
         return ranked, 0
 
@@ -255,11 +260,16 @@ def _resolve_cutline(ranked: list, hrs: dict, cut: int,
     tied   = [n for n in ranked if hrs[n] == cutline_score]
     others = [n for n in ranked if hrs[n] != cutline_score]
 
-    # Randomly shuffle tied players to simulate swing-off order
-    tied_arr = np.array(tied)
-    rng.shuffle(tied_arr)
-    tied = tied_arr.tolist()
+    if distances is not None:
+        # 2026 R1 rule: longest HR distance breaks the tie
+        tied = sorted(tied, key=lambda n: distances.get(n, 0.0), reverse=True)
+        n_so = 0   # distance tiebreak is not a swing-off
+    else:
+        # Swing-off: random shuffle (each round handled separately)
+        tied_arr = np.array(tied)
+        rng.shuffle(tied_arr)
+        tied = tied_arr.tolist()
+        n_so = 1
 
-    n_so        = 1
     new_ranking = sorted(others, key=lambda n: hrs[n], reverse=True) + tied
     return new_ranking, n_so
