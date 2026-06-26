@@ -1,16 +1,51 @@
 # ─────────────────────────────────────────────────────────────
 #  HRD Model — Player Power Rating
 # ─────────────────────────────────────────────────────────────
+import os
 import numpy as np
+import pandas as pd
 
 from config import (
     ATTRIBUTE_WEIGHTS,
-    HR_PROB_MIN, HR_PROB_MAX,
+    HR_PROB_MIN, HR_PROB_MAX, OUTS_LO_PCT, OUTS_HI_PCT,
     DIST_BASE, DIST_EV_BASE, DIST_EV_SCALE,
     DIST_BS_BASE, DIST_BS_SCALE, DIST_STD,
     EV_MEAN_FACTOR, EV_STD,
     HISTORICAL_DERBY, HISTORICAL_YEAR_WEIGHTS,
 )
+
+_OUTS_CSV = os.path.join(os.path.dirname(os.path.abspath(__file__)), "hrd_outs_format.csv")
+
+
+def _calibrate_from_outs_format(lo_pct: float, hi_pct: float) -> tuple:
+    """
+    Derive HR prob bounds from Round 1 hr_per_swing percentiles in
+    hrd_outs_format.csv.  Falls back to config values if the file is absent.
+    """
+    if not os.path.exists(_OUTS_CSV):
+        print(f"  INFO: {_OUTS_CSV} not found — using config HR_PROB bounds.")
+        return HR_PROB_MIN, HR_PROB_MAX
+
+    df = pd.read_csv(_OUTS_CSV)
+    r1 = df[df["round"] == "R1"]["hr_per_swing"].dropna()
+    if len(r1) < 5:
+        return HR_PROB_MIN, HR_PROB_MAX
+
+    lo = float(np.percentile(r1, lo_pct))
+    hi = float(np.percentile(r1, hi_pct))
+
+    # Apply config HR_PROB_MIN/MAX as explicit floor/ceiling overrides.
+    # Lets OUTS_LO/HI_PCT remain conceptually meaningful percentiles while
+    # still allowing direct calibration tuning via HR_PROB_MIN/MAX.
+    lo = max(lo, HR_PROB_MIN)
+    hi = min(hi, HR_PROB_MAX)
+
+    print(
+        f"  INFO: HR prob bounds from outs-format data "
+        f"(P{lo_pct:.0f}/P{hi_pct:.0f} of R1 hr/swing, n={len(r1)}): "
+        f"MIN={lo:.4f}, MAX={hi:.4f}"
+    )
+    return lo, hi
 
 
 def build_player_models(players: list) -> list:
@@ -22,8 +57,9 @@ def build_player_models(players: list) -> list:
       mean_hr_dist     – mean HR distance (feet)
       mean_hr_ev       – mean HR exit velocity in the derby
     """
+    prob_min, prob_max = _calibrate_from_outs_format(OUTS_LO_PCT, OUTS_HI_PCT)
     scores = _compute_power_scores(players)
-    _attach_probabilities(players, scores)
+    _attach_probabilities(players, scores, prob_min, prob_max)
     return players
 
 
@@ -91,7 +127,8 @@ def _apply_historical_adjustment(players: list, scores: np.ndarray) -> np.ndarra
     return scores
 
 
-def _attach_probabilities(players: list, scores: np.ndarray) -> None:
+def _attach_probabilities(players: list, scores: np.ndarray,
+                          prob_min: float, prob_max: float) -> None:
     """
     Map normalised power scores to per-swing HR probability and
     distance / EV distribution parameters.  Results written in-place.
@@ -103,8 +140,8 @@ def _attach_probabilities(players: list, scores: np.ndarray) -> None:
     for i, p in enumerate(players):
         norm = (scores[i] - s_min) / denom   # 0→1
 
-        # Per-swing HR probability (linear mapping)
-        p["hr_prob"]     = HR_PROB_MIN + (HR_PROB_MAX - HR_PROB_MIN) * norm
+        # Per-swing HR probability (linear mapping onto empirically-calibrated bounds)
+        p["hr_prob"]     = prob_min + (prob_max - prob_min) * norm
         p["power_score"] = float(scores[i])
 
         # Distance model parameters

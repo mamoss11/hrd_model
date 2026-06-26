@@ -40,8 +40,16 @@ ATTRIBUTE_WEIGHTS = {
 
 # ── HR Probability Calibration ───────────────────────────────
 # Power score 0→1 maps linearly to HR probability per swing
-HR_PROB_MIN = 0.40   # weakest player in field
-HR_PROB_MAX = 0.48   # strongest player in field
+# Bounds derived at runtime from hrd_outs_format.csv (see player_model.py).
+# These fallback values are used only if the CSV is missing.
+HR_PROB_MIN = 0.36   # tuned floor — calibrated against 2025 market shape; floors P20 result
+HR_PROB_MAX = 0.50   # ceiling fallback; not currently binding (P85 = 0.4737)
+
+# Percentiles of Round 1 hr_per_swing used to set the bounds.
+# P15/P85 discards extreme outliers while capturing the realistic
+# skill range of a competitive HRD field.
+OUTS_LO_PCT = 20.0
+OUTS_HI_PCT = 85.0
 
 # ── Performance Variance ─────────────────────────────────────
 # Each simulation draws a random day-factor per player:
@@ -49,7 +57,7 @@ HR_PROB_MAX = 0.48   # strongest player in field
 # Models pitcher quality, feel on the day, crowd pressure etc.
 # Higher value = more upsets, flatter outright prices.
 # Typical useful range: 0.10 (low variance) to 0.25 (high variance)
-PERFORMANCE_STD = 0.18
+PERFORMANCE_STD = 0.25
 PERFORMANCE_CLIP = (0.50, 1.60)   # bounds on the multiplier
 
 # ── Park Factors ─────────────────────────────────────────────

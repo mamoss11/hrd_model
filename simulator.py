@@ -198,8 +198,9 @@ def _simulate_round(player: dict, round_key: str, rng: np.random.Generator) -> d
     hrs    = int(hits.sum())
 
     # Hot hand: if last swing was a HR, keep swinging until non-HR
+    # Cap at 10 extra swings to prevent geometric explosion
     if hits[-1]:
-        while True:
+        for _ in range(10):
             if rng.random() < hr_prob:
                 hrs += 1
             else:
