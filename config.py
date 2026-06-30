@@ -57,7 +57,7 @@ OUTS_HI_PCT = 85.0
 # Models pitcher quality, feel on the day, crowd pressure etc.
 # Higher value = more upsets, flatter outright prices.
 # Typical useful range: 0.10 (low variance) to 0.25 (high variance)
-PERFORMANCE_STD = 0.25
+PERFORMANCE_STD = 0.15
 PERFORMANCE_CLIP = (0.50, 1.60)   # bounds on the multiplier
 
 # ── Park Factors ─────────────────────────────────────────────
