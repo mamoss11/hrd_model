@@ -31,10 +31,10 @@ SEMIFINAL_SEEDING = [(0, 3), (1, 2)]   # index into sorted round-1 results
 # ── Attribute Weights ────────────────────────────────────────
 # Must sum to 1.0
 ATTRIBUTE_WEIGHTS = {
-    "bat_speed":          0.25,   # pulled back per RF: ~18% normalized
-    "max_exit_velo":      0.10,   # reduced — single-swing outlier, Cruz anchor
-    "pulled_barrel_pct":  0.25,   # boosted per RF: strongest signal at ~48%
-    "hr_per_pa":          0.25,   # raised — best real-game HR conversion signal
+    "bat_speed":          0.20,   # lowered — Caminero anchors this; reduce distortion
+    "max_exit_velo":      0.15,   # raised — raw power ceiling; helps Wood/Cruz
+    "pulled_barrel_pct":  0.20,   # lowered — Buxton anchors this; reduce distortion
+    "hr_per_pa":          0.30,   # raised — best real-game HR conversion signal
     "pct90_exit_velo":    0.15,   # 90th-pct EV: more signal than HH110 binary cutoff
 }
 
@@ -147,7 +147,8 @@ PLAYERS = [
     {"name": "Cal Raleigh",       "mlb_id": 663728, "team": "SEA",
      "league": "AL", "nationality": "USA",           "bats": "L"},
     {"name": "Byron Buxton",      "mlb_id": 621439, "team": "MIN",
-     "league": "AL", "nationality": "USA",           "bats": "R"},
+     "league": "AL", "nationality": "USA",           "bats": "R",
+     "season_start": "2025-03-27", "season_end": "2025-09-30"},
     {"name": "Matt Olson",        "mlb_id": 621566, "team": "ATL",
      "league": "NL", "nationality": "USA",           "bats": "L"},
     {"name": "Jazz Chisholm Jr.", "mlb_id": 665862, "team": "NYY",
@@ -164,4 +165,4 @@ PLAYERS = [
 
 # ── Statcast Season Window ───────────────────────────────────
 SEASON_START = "2025-03-27"
-SEASON_END   = "2026-06-25"
+SEASON_END   = "2026-06-30"

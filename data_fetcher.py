@@ -112,9 +112,13 @@ def load_player_attributes(players: list, start: str = SEASON_START, end: str = 
     """
     enriched = []
     for p in players:
+        p_start = p.get("season_start", start)
+        p_end   = p.get("season_end",   end)
         print(f"  Fetching Statcast data for {p['name']} (ID {p['mlb_id']})...")
+        if p_start != start or p_end != end:
+            print(f"    (custom window: {p_start} -> {p_end})")
         try:
-            df    = fetch_statcast(p["mlb_id"], start, end)
+            df    = fetch_statcast(p["mlb_id"], p_start, p_end)
             attrs = compute_attributes(df, p["bats"])
         except Exception as exc:
             print(f"    WARNING: No Statcast data for {p['name']} (2025–2026): {exc}")
