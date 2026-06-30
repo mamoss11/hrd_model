@@ -367,10 +367,12 @@ if st.button("Run Simulation", type="primary", disabled=not run_ok):
             players = [p for p in _all_cached
                        if p.get("mlb_id") in _field_ids or p["name"] in _field_names]
             if len(players) != len(players_cfg):
-                st.warning(
+                st.error(
                     f"Cache matched {len(players)} of {len(players_cfg)} players. "
-                    "Re-run build_cache.py to rebuild the cache for the current field."
+                    "The cache was built for a different field. "
+                    "Switch to **Fetch Statcast** mode, or rebuild the cache locally with `build_cache.py`."
                 )
+                st.stop()
         else:
             with st.spinner("Fetching Statcast data from Baseball Savant..."):
                 players = _cached_load_attrs(
