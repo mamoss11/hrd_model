@@ -31,11 +31,11 @@ SEMIFINAL_SEEDING = [(0, 3), (1, 2)]   # index into sorted round-1 results
 # ── Attribute Weights ────────────────────────────────────────
 # Must sum to 1.0
 ATTRIBUTE_WEIGHTS = {
-    "bat_speed":          0.20,   # lowered — Caminero anchors this; reduce distortion
-    "max_exit_velo":      0.15,   # raised — raw power ceiling; helps Wood/Cruz
-    "pulled_barrel_pct":  0.20,   # lowered — Buxton anchors this; reduce distortion
-    "hr_per_pa":          0.30,   # raised — best real-game HR conversion signal
-    "pct90_exit_velo":    0.15,   # 90th-pct EV: more signal than HH110 binary cutoff
+    "bat_speed":          0.25,   # +0.05 from hr_per_pa reduction
+    "max_exit_velo":      0.20,   # +0.05 from hr_per_pa reduction
+    "pulled_barrel_pct":  0.20,
+    "hr_per_pa":          0.15,   # lowered from 0.30 — reduces penalty on limited-PA guys
+    "pct90_exit_velo":    0.20,   # +0.05 from hr_per_pa reduction
 }
 
 # ── HR Probability Calibration ───────────────────────────────
@@ -142,27 +142,26 @@ HISTORICAL_DERBY = {
     621566: {"r1_hrs": [9], "years": [2019]},
 }
 
-# ── Players — 2025 HRD Field ─────────────────────────────────
+# ── Players — 2026 HRD Field ─────────────────────────────────
 PLAYERS = [
-    {"name": "Cal Raleigh",       "mlb_id": 663728, "team": "SEA",
-     "league": "AL", "nationality": "USA",           "bats": "L"},
-    {"name": "Byron Buxton",      "mlb_id": 621439, "team": "MIN",
-     "league": "AL", "nationality": "USA",           "bats": "R",
-     "season_start": "2025-03-27", "season_end": "2025-09-30"},
-    {"name": "Matt Olson",        "mlb_id": 621566, "team": "ATL",
+    {"name": "Kyle Schwarber",    "mlb_id": 656941, "team": "PHI",
      "league": "NL", "nationality": "USA",           "bats": "L"},
-    {"name": "Jazz Chisholm Jr.", "mlb_id": 665862, "team": "NYY",
-     "league": "AL", "nationality": "USA",           "bats": "L"},
-    {"name": "Oneil Cruz",        "mlb_id": 665833, "team": "PIT",
-     "league": "NL", "nationality": "International", "bats": "L"},
     {"name": "Junior Caminero",   "mlb_id": 691406, "team": "TB",
      "league": "AL", "nationality": "International", "bats": "R"},
-    {"name": "James Wood",        "mlb_id": 695578, "team": "WSH",
+    {"name": "Bryce Harper",      "mlb_id": 547180, "team": "PHI",
      "league": "NL", "nationality": "USA",           "bats": "L"},
-    {"name": "Brent Rooker",      "mlb_id": 667670, "team": "OAK",
-     "league": "AL", "nationality": "USA",           "bats": "R"},
+    {"name": "Ben Rice",          "mlb_id": 700250, "team": "NYY",
+     "league": "AL", "nationality": "USA",           "bats": "L"},
+    {"name": "Willson Contreras", "mlb_id": 575929, "team": "BOS",
+     "league": "AL", "nationality": "International", "bats": "R"},
+    {"name": "Jordan Walker",     "mlb_id": 691023, "team": "STL",
+     "league": "NL", "nationality": "USA",           "bats": "R"},
+    {"name": "Jac Caglianone",    "mlb_id": 695506, "team": "KC",
+     "league": "AL", "nationality": "USA",           "bats": "L"},
+    {"name": "Munetaka Murakami", "mlb_id": 808959, "team": "CWS",
+     "league": "AL", "nationality": "International", "bats": "L"},
 ]
 
 # ── Statcast Season Window ───────────────────────────────────
 SEASON_START = "2025-03-27"
-SEASON_END   = "2026-06-30"
+SEASON_END   = "2026-07-11"
