@@ -136,6 +136,25 @@ def _group_markets(markets, player_names):
     return {k: v for k, v in groups.items() if v}
 
 
+def _american_to_prob(odds_str: str):
+    try:
+        odds = int(odds_str.strip().replace("+", ""))
+        if odds > 0:
+            return 100 / (odds + 100)
+        else:
+            return abs(odds) / (abs(odds) + 100)
+    except (ValueError, AttributeError):
+        return None
+
+
+def _prob_to_american(prob: float) -> str:
+    prob = max(1e-6, min(1 - 1e-6, prob))
+    if prob >= 0.5:
+        return str(int(round(-(prob / (1 - prob)) * 100)))
+    else:
+        return f"+{int(round(((1 - prob) / prob) * 100))}"
+
+
 def _outcomes_df(outcomes):
     rows = []
     for label, data in sorted(outcomes.items(), key=lambda x: -x[1]["prob"]):
@@ -480,3 +499,72 @@ if "results" in st.session_state:
             _render_player_props(grouped[group_name], names, tab)
         else:
             _render_group(grouped[group_name], tab)
+
+    # ── Back-calculate Semis / Finals from market winner odds ─────────────
+    st.divider()
+    st.subheader("Back-Calculate Semis / Finals Prices")
+    st.caption(
+        "Enter current market winner odds (American). "
+        "The model's structural ratios (P_semis/P_win, P_final/P_win) are applied "
+        "to derive internally consistent semis and finals prices."
+    )
+
+    col_h1, col_h2 = st.columns([3, 2])
+    col_h1.markdown("**Player**")
+    col_h2.markdown("**Market Winner Odds**")
+
+    odds_inputs = {}
+    for nm in names:
+        c1, c2 = st.columns([3, 2])
+        c1.write(nm)
+        odds_inputs[nm] = c2.text_input(
+            nm, key=f"bc_odds_{nm}",
+            placeholder="-150 or +300",
+            label_visibility="collapsed",
+        )
+
+    if st.button("Calculate Derived Prices"):
+        raw_probs = {}
+        valid = True
+        for nm in names:
+            p = _american_to_prob(odds_inputs.get(nm, ""))
+            if p is None:
+                st.error(f"Invalid odds for {nm} — use American format e.g. -150 or +300.")
+                valid = False
+                break
+            raw_probs[nm] = p
+
+        if valid:
+            # Remove vig by normalising to sum to 1
+            total = sum(raw_probs.values())
+            mkt_win = {nm: p / total for nm, p in raw_probs.items()}
+
+            winner_mkt = markets.get("Winner", {})
+            semis_mkt  = markets.get("Make the Semi Finals", {})
+            final_mkt  = markets.get("Make the Final", {})
+
+            rows = []
+            for nm in names:
+                model_win   = winner_mkt.get(nm, {}).get("prob", 0)
+                model_semi  = semis_mkt.get(nm,  {}).get("prob", 0)
+                model_final = final_mkt.get(nm,  {}).get("prob", 0)
+
+                mkt_p = mkt_win[nm]
+                if model_win > 0:
+                    derived_semi  = min(mkt_p * (model_semi  / model_win), 1.0)
+                    derived_final = min(mkt_p * (model_final / model_win), 1.0)
+                else:
+                    derived_semi  = model_semi
+                    derived_final = model_final
+
+                rows.append({
+                    "Player":         nm,
+                    "Mkt Win Odds":   odds_inputs[nm].strip(),
+                    "Mkt Win %":      f"{mkt_p * 100:.1f}%",
+                    "Derived Semis":  _prob_to_american(derived_semi),
+                    "Semis %":        f"{derived_semi * 100:.1f}%",
+                    "Derived Finals": _prob_to_american(derived_final),
+                    "Finals %":       f"{derived_final * 100:.1f}%",
+                })
+
+            st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
