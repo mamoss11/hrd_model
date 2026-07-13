@@ -158,6 +158,41 @@ def _render_group(group_dict, container):
                 )
 
 
+import re as _re
+_THRESH_RE = _re.compile(r"^(.+) (\d+)\+ HRs in Round 1$")
+
+
+def _render_player_props(group_dict, player_names, container):
+    threshold_markets = {}
+    other_markets = {}
+    for mkt_name, outcomes in group_dict.items():
+        m = _THRESH_RE.match(mkt_name)
+        if m:
+            threshold_markets[(m.group(1), int(m.group(2)))] = outcomes
+        else:
+            other_markets[mkt_name] = outcomes
+
+    with container:
+        if threshold_markets:
+            st.markdown("**R1 HR Thresholds**")
+            thresholds = sorted({t for _, t in threshold_markets})
+            rows = []
+            for thresh in thresholds:
+                line = thresh - 0.5
+                row = {"Threshold": f"Over {line}"}
+                for nm in player_names:
+                    d = threshold_markets.get((nm, thresh), {}).get(f"Over {line}")
+                    row[nm] = f"{d['prob']*100:.1f}% ({d['american']})" if d else "—"
+                rows.append(row)
+            st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+            if other_markets:
+                st.divider()
+
+        for mkt_name, outcomes in sorted(other_markets.items()):
+            with st.expander(mkt_name):
+                st.dataframe(_outcomes_df(outcomes), width="stretch", hide_index=True)
+
+
 # ── Sidebar ──────────────────────────────────────────────────────────────
 _CACHE_PATH = os.path.join(os.path.dirname(__file__), "data", "player_attrs.json")
 venues = list(cfg.PARK_FACTORS.keys())
@@ -441,4 +476,7 @@ if "results" in st.session_state:
     tabs      = st.tabs(tab_names)
 
     for tab, group_name in zip(tabs, tab_names):
-        _render_group(grouped[group_name], tab)
+        if group_name == "Player Props":
+            _render_player_props(grouped[group_name], names, tab)
+        else:
+            _render_group(grouped[group_name], tab)

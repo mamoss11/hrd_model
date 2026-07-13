@@ -34,7 +34,8 @@ def price_all_markets(players: list, sims: list) -> dict:
     markets.update(_market_most_r1_hrs_player(names, sims, n))
     markets.update(_market_most_r1_hrs_any(sims, n))
     markets.update(_market_player_r1_hrs(names, sims, n))
-    markets.update(_market_player_r1_threshold(names, sims, n, threshold=15))
+    for _t in range(7, 16):
+        markets.update(_market_player_r1_threshold(names, sims, n, threshold=_t))
     markets.update(_market_player_r1_threshold(names, sims, n, threshold=20))
     markets.update(_market_player_r1_threshold(names, sims, n, threshold=25))
     markets.update(_market_player_r1_threshold(names, sims, n, threshold=30))
@@ -154,13 +155,15 @@ def _market_player_r1_hrs(names, sims, n):
 
 
 def _market_player_r1_threshold(names, sims, n, threshold):
+    line = threshold - 0.5   # "7+" == "Over 6.5"
     market = {}
     for nm in names:
-        count = sum(1 for s in sims if s["r1_hrs"][nm] >= threshold)
-        prob  = count / n
+        vals       = np.array([s["r1_hrs"][nm] for s in sims])
+        over_prob  = float((vals > line).mean())
+        under_prob = 1 - over_prob
         market[f"{nm} {threshold}+ HRs in Round 1"] = {
-            "Yes": _fmt(prob),
-            "No":  _fmt(1 - prob),
+            f"Over {line}":  _fmt(over_prob),
+            f"Under {line}": _fmt(under_prob),
         }
     return market
 
